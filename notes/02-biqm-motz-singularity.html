@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[02] 無網格邊界積分法（BIQM）與 Motz 奇異點問題 | StructLab 筆記庫</title>
+  <link rel="stylesheet" href="../assets/style.css">
+
+  <!-- KaTeX CDN (依據 AGENTS.md 第 2 節規範) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$', right: '$', display: false}
+      ],
+      throwOnError: false
+    });"></script>
+
+  <!-- Prism.js CDN (支援 Python 與 MATLAB 語法高亮) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-matlab.min.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="brand">
+        <span class="brand-tag">STRUCTLAB</span>
+        <span>結構力學與數值計算筆記庫</span>
+      </a>
+      <span class="header-subtitle">NOTE #02 // MESHFREE &amp; BEM</span>
+    </div>
+  </header>
+
+  <main class="note-container">
+    <!-- 頁首資訊區 -->
+    <header class="note-header">
+      <div class="note-header-top">
+        <span class="badge">無網格與邊界元素法</span>
+        <span class="note-id">#02</span>
+        <span class="note-date">最後更新：2026-11-15</span>
+      </div>
+      <h1>無網格邊界積分法（BIQM）與 Motz 奇異點問題</h1>
+      <p class="note-summary">
+        探討二維穩態熱傳導（Laplace 方程式）在混合邊界條件交界處產生之 Motz 奇異點問題。透過無網格邊界積分求積法（BIQM）直接於邊界配置求積點，結合奇異函數解析分離與影響矩陣分塊求解未知廣義位移向量 $U_u$。
+      </p>
+    </header>
+
+    <!-- 一、物理問題與控制方程式 -->
+    <section class="note-section" id="section-theory">
+      <h2>一、物理問題與控制方程式</h2>
+      <p>
+        考慮二維矩形計算域 $\Omega = (-1, 1) \times (0, 1)\,\text{m}^2$ 內之無熱源穩態熱傳導問題，其溫度場 $u(x,y)$ 滿足拉普拉斯控制方程式（Laplace Equation）：
+      </p>
+      <div class="equation-box">
+        $$\nabla^2 u(x,y) = \frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} = 0, \qquad (x,y) \in \Omega$$
+      </div>
+      <p>
+        在底邊 $y = 0$ 處，左側（$-1 < x < 0$）為絕熱 Neumann 邊界（$\partial u / \partial n = 0$），右側（$0 < x < 1$）為固定零溫 Dirichlet 邊界（$u = 0$）。兩類邊界在原點 $(0,0)$ 交會形成強奇異點，其局部極座標 $(r, \theta)$ 漸近解析解為：
+      </p>
+      <div class="equation-box">
+        $$u(r, \theta) = \sum_{n=0}^{\infty} a_n r^{n + \frac{1}{2}} \cos\left(\left(n + \frac{1}{2}\right)\theta\right)$$
+      </div>
+      <p>
+        利用邊界積分方程式（BIE）與基本解 $G(\mathbf{x}, \mathbf{y}) = -\frac{1}{2\pi} \ln \|\mathbf{x} - \mathbf{y}\|$ 離散後，依未知邊界廣義位移向量 $U_u$ 與已知邊界條件向量 $U_k$ 進行系統影響矩陣 $K_S$ 分塊：
+      </p>
+      <div class="equation-box">
+        $$\begin{bmatrix} K_{S,uu} & K_{S,uk} \\ K_{S,ku} & K_{S,kk} \end{bmatrix} \begin{Bmatrix} U_u \\ U_k \end{Bmatrix} = \begin{Bmatrix} F_u \\ F_k \end{Bmatrix} \implies K_{S,uu} U_u = F_u - K_{S,uk} U_k$$
+      </div>
+    </section>
+
+    <!-- 二、符號定義表 -->
+    <section class="note-section" id="section-notation">
+      <h2>二、符號定義表</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>變數符號</th>
+              <th>SI 單位</th>
+              <th>物理意義與數值定義</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>$K_S$</td>
+              <td>$\text{m}^{-1}, \text{無因次}$</td>
+              <td>邊界積分求積系統影響矩陣（System Influence / Stiffness Matrix）</td>
+            </tr>
+            <tr>
+              <td>$U_u$</td>
+              <td>$\text{K}, \text{K/m}$</td>
+              <td>邊界上未知廣義場量向量（含未知溫度、法向熱通量及奇異係數 $a_n$）</td>
+            </tr>
+            <tr>
+              <td>$U_k$</td>
+              <td>$\text{K}, \text{K/m}$</td>
+              <td>邊界上已知 Dirichlet 或 Neumann 給定邊界條件向量</td>
+            </tr>
+            <tr>
+              <td>$G(\mathbf{x}, \mathbf{y})$</td>
+              <td>無因次</td>
+              <td>二維拉普拉斯基本解（Fundamental Solution），$\mathbf{x}$ 為場點、$\mathbf{y}$ 為源點</td>
+            </tr>
+            <tr>
+              <td>$r, \theta$</td>
+              <td>$\text{m}, \text{rad}$</td>
+              <td>以奇異點 $(0,0)$ 為原點之極座標半徑與極角</td>
+            </tr>
+            <tr>
+              <td>$a_0, a_1, \dots$</td>
+              <td>$\text{K/m}^{n+0.5}$</td>
+              <td>Motz 奇異點級數展開之應力／通量強度係數（領頭項 $a_0 \approx 401.1625$）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 三、數值求解步驟 -->
+    <section class="note-section" id="section-algorithm">
+      <h2>三、數值求解步驟</h2>
+      <ol class="algorithm-list">
+        <li><strong>無網格邊界求積點配置：</strong>沿矩形四條邊界依高斯-勒讓德（Gauss-Legendre）求積權重配置邊界節點，無需生成元素網格與拓撲連接表。</li>
+        <li><strong>奇異點函數分離（Singularity Subtraction）：</strong>將總場量拆解為光滑規則部分與前 $M$ 項 Motz 奇異級數項 $u = u_{\text{reg}} + \sum_{n=0}^{M-1} a_n \psi_n(r,\theta)$，使 $u_{\text{reg}}$ 在原點附近保持平滑。</li>
+        <li><strong>組裝系統矩陣 $K_S$ 與奇異積分處理：</strong>計算基本解 $G(\mathbf{x},\mathbf{y})$ 與其法向導數 $\partial G / \partial n$，對角線弱奇異項採用解析積分或去奇異化技巧（Desingularization）精確求值。</li>
+        <li><strong>施加邊界條件並求解 $U_u$：</strong>將已知邊界向量 $U_k$ 移項至右端項，透過奇異值分解（SVD）或最小二乘法求解超定方程組，同時獲得邊界未知場量與領頭奇異係數 $a_0$。</li>
+        <li><strong>域內場量重構：</strong>利用已求得之 $U_u$ 與 $U_k$ 代回邊界積分恆等式，計算計算域 $\Omega$ 內部任意測點之溫度與熱通量分布。</li>
+      </ol>
+    </section>
+
+    <!-- 四、MATLAB / Python 實作 -->
+    <section class="note-section" id="section-code">
+      <h2>四、MATLAB / Python 實作</h2>
+      <p>以下 Python 範例展示如何建立二維拉普拉斯基本解核函數、配置邊界求積點並組裝系統影響矩陣 $K_S$ 求解未知邊界向量 $U_u$：</p>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>biqm_motz_solver.py (Python 3)</span>
+          <button class="copy-btn" onclick="copyCodeBlock(this)">複製程式碼</button>
+        </div>
+        <pre><code class="language-python">import numpy as np
+
+def generate_boundary_points(n_per_edge=20):
+    """在 [-1, 1] x [0, 1] 矩形邊界配置均勻求積點與外法線向量 (SI 單位: m)"""
+    s = np.linspace(-1.0, 1.0, n_per_edge, endpoint=False) + 1.0 / n_per_edge
+    # 底邊 y = 0 (-1 < x < 1)
+    x_bot, y_bot = s, np.zeros_like(s)
+    nx_bot, ny_bot = np.zeros_like(s), -np.ones_like(s)
+    
+    # 右邊 x = 1 (0 < y < 1)
+    y_right = (s + 1.0) * 0.5
+    x_right = np.ones_like(y_right)
+    nx_right, ny_right = np.ones_like(y_right), np.zeros_like(y_right)
+    
+    # 頂邊 y = 1 (1 > x > -1)
+    x_top, y_top = -s, np.ones_like(s)
+    nx_top, ny_top = np.zeros_like(s), np.ones_like(s)
+    
+    # 左邊 x = -1 (1 > y > 0)
+    y_left = (1.0 - s) * 0.5
+    x_left = -np.ones_like(y_left)
+    nx_left, ny_left = -np.ones_like(y_left), np.zeros_like(y_left)
+    
+    pts = np.vstack([
+        np.column_stack([x_bot, y_bot]),
+        np.column_stack([x_right, y_right]),
+        np.column_stack([x_top, y_top]),
+        np.column_stack([x_left, y_left])
+    ])
+    normals = np.vstack([
+        np.column_stack([nx_bot, ny_bot]),
+        np.column_stack([nx_right, ny_right]),
+        np.column_stack([nx_top, ny_top]),
+        np.column_stack([nx_left, ny_left])
+    ])
+    return pts, normals
+
+def assemble_system_matrix_KS(pts, normals, ds):
+    """組裝無網格邊界積分求積系統矩陣 K_S"""
+    N = len(pts)
+    K_S_single = np.zeros((N, N))
+    K_S_double = np.zeros((N, N))
+    
+    for i in range(N):
+        for j in range(N):
+            if i == j:
+                # 對角線主值與自作用解析近似 (避免 ln(0) 奇異)
+                K_S_single[i, j] = -(ds / (2.0 * np.pi)) * (np.log(ds / 2.0) - 1.0)
+                K_S_double[i, j] = 0.5
+            else:
+                rx = pts[i, 0] - pts[j, 0]
+                ry = pts[i, 1] - pts[j, 1]
+                r2 = rx**2 + ry**2
+                r = np.sqrt(r2)
+                K_S_single[i, j] = -(1.0 / (2.0 * np.pi)) * np.log(r) * ds
+                rn = rx * normals[j, 0] + ry * normals[j, 1]
+                K_S_double[i, j] = -(rn / (2.0 * np.pi * r2)) * ds
+    return K_S_single, K_S_double
+
+# 執行 BIQM 矩陣組裝與未知向量 U_u 測試求解
+pts, normals = generate_boundary_points(n_per_edge=16)
+ds = 2.0 / 16.0
+G_mat, H_mat = assemble_system_matrix_KS(pts, normals, ds)
+
+# 已知邊界條件向量 U_k (右邊 x=1 給定 u = 500 K，其餘簡化示意)
+U_k = np.zeros(len(pts))
+U_k[16:32] = 500.0
+
+# 求解未知邊界通量向量 U_u (K_S_uu * U_u = H_mat * U_k)
+K_S_uu = G_mat
+rhs = H_mat @ U_k
+U_u = np.linalg.solve(K_S_uu, rhs)
+
+print(f"系統影響矩陣 K_S 維度 : {K_S_uu.shape}")
+print(f"未知向量 U_u 最大通量 : {np.max(np.abs(U_u)):.4f} K/m")</code></pre>
+      </div>
+    </section>
+
+    <!-- 五、常見數值陷阱與除錯筆記 -->
+    <section class="note-section" id="section-pitfalls">
+      <h2>五、常見數值陷阱與除錯筆記</h2>
+      <div class="callout-warning">
+        <div class="callout-warning-title">⚠️ 邊界積分法與 Motz 問題常見數值陷阱</div>
+        <ul>
+          <li><strong>退化尺度（Degenerate Scale）導致系統矩陣奇異：</strong>二維拉普拉斯問題使用單層位勢基本解 $G(\mathbf{x},\mathbf{y}) = -\frac{1}{2\pi}\ln r$ 時，若計算域幾何特徵尺寸恰好落在外接圓半徑 $R = 1\,\text{m}$ 的退化尺度上，系統矩陣 $K_S$ 的條件數（Condition Number）會急劇惡化甚至不可逆。實作時應進行座標無因次化縮放或加入額外約束條件。</li>
+          <li><strong>未分離奇異點導致原點附近震盪：</strong>Motz 問題在 $(0,0)$ 處的法向通量具有 $r^{-1/2}$ 階無窮大奇異性，若僅加密邊界求積點而不加入奇異函數 $r^{n+0.5}\cos((n+0.5)\theta)$ 進行解析分離，數值解會在交界點附近產生劇烈 Gibbs 震盪且無法收斂。</li>
+          <li><strong>近邊界層效應（Near-Boundary Layer Effect）：</strong>當域內測點 $\mathbf{x}$ 非常靠近邊界源點 $\mathbf{y}$ 時，核函數呈現近奇異（Nearly Singular）變化，直接使用標準求積會產生大幅誤差，需改採非線性座標變換或自適應細分求積。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 頁尾導覽 -->
+    <nav class="note-footer-nav">
+      <a href="../index.html" class="btn-back">← 返回筆記庫首頁</a>
+      <span class="note-id">StructLab // Note 02</span>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    StructLab Engineering Wiki &bull; 統一採用 SI 單位制與標準工程符號規範
+  </footer>
+
+  <script>
+    function copyCodeBlock(button) {
+      const codeElement = button.closest(".code-wrapper").querySelector("code");
+      const text = codeElement.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = button.textContent;
+        button.textContent = "已複製！";
+        setTimeout(() => {
+          button.textContent = originalText;
+        }, 1800);
+      });
+    }
+  </script>
+</body>
+</html>

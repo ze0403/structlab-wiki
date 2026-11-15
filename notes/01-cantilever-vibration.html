@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[01] 垂直懸臂梁自由振動實驗與模態分析 | StructLab 筆記庫</title>
+  <link rel="stylesheet" href="../assets/style.css">
+
+  <!-- KaTeX CDN (依據 AGENTS.md 第 2 節規範) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$', right: '$', display: false}
+      ],
+      throwOnError: false
+    });"></script>
+
+  <!-- Prism.js CDN (支援 Python 與 MATLAB 語法高亮) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-matlab.min.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="brand">
+        <span class="brand-tag">STRUCTLAB</span>
+        <span>結構力學與數值計算筆記庫</span>
+      </a>
+      <span class="header-subtitle">NOTE #01 // STRUCTURAL DYNAMICS</span>
+    </div>
+  </header>
+
+  <main class="note-container">
+    <!-- 頁首資訊區 -->
+    <header class="note-header">
+      <div class="note-header-top">
+        <span class="badge">結構動力學實驗</span>
+        <span class="note-id">#01</span>
+        <span class="note-date">最後更新：2026-11-15</span>
+      </div>
+      <h1>垂直懸臂梁自由振動實驗與模態分析</h1>
+      <p class="note-summary">
+        透過高速攝影與 Tracker 影像追蹤擷取懸臂梁自由衰減位移歷時，結合對數衰減法與快速傅立葉轉換（FFT）識別結構阻尼比 $\zeta$ 與自然頻率 $\omega_n$，並建立離散系統勁度矩陣 $K_S$ 進行理論模態比對。
+      </p>
+    </header>
+
+    <!-- 一、物理問題與控制方程式 -->
+    <section class="note-section" id="section-theory">
+      <h2>一、物理問題與控制方程式</h2>
+      <p>
+        考慮一長度為 $L$、均勻斷面之垂直懸臂梁，底端（$x = 0$）為完全固定端，頂端（$x = L$）為自由端。在忽略軸力與剪力變形之尤拉-伯努利梁（Euler-Bernoulli Beam）假設下，無阻尼自由橫向振動控制方程式為：
+      </p>
+      <div class="equation-box">
+        $$EI \frac{\partial^4 w(x,t)}{\partial x^4} + \rho A \frac{\partial^2 w(x,t)}{\partial t^2} = 0$$
+      </div>
+      <p>
+        當將連續梁離散為多自由度有限元素模型時，依未知自由度與已知支承邊界進行矩陣分塊，系統無阻尼自由振動運動方程式可寫為：
+      </p>
+      <div class="equation-box">
+        $$\begin{bmatrix} M_{uu} & M_{uk} \\ M_{ku} & M_{kk} \end{bmatrix} \begin{Bmatrix} \ddot{U}_u \\ \ddot{U}_k \end{Bmatrix} + \begin{bmatrix} K_{S,uu} & K_{S,uk} \\ K_{S,ku} & K_{S,kk} \end{bmatrix} \begin{Bmatrix} U_u \\ U_k \end{Bmatrix} = \begin{Bmatrix} 0 \\ R_k \end{Bmatrix}$$
+      </div>
+      <p>
+        由於固定端邊界條件滿足 $U_k = 0$ 且 $\ddot{U}_k = 0$，縮減後之廣義特徵值問題與實驗對數衰減率 $\delta$ 計算式分別為：
+      </p>
+      <div class="equation-box">
+        $$\left( K_{S,uu} - \omega_n^2 M_{uu} \right) \phi_n = 0, \qquad \delta = \frac{1}{m} \ln\left(\frac{u(t_i)}{u(t_{i+m})}\right), \qquad \zeta = \frac{\delta}{\sqrt{(2\pi)^2 + \delta^2}}$$
+      </div>
+    </section>
+
+    <!-- 二、符號定義表 -->
+    <section class="note-section" id="section-notation">
+      <h2>二、符號定義表</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>變數符號</th>
+              <th>SI 單位</th>
+              <th>物理意義與工程定義</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>$K_S$</td>
+              <td>$\text{N/m}$</td>
+              <td>結構系統整體勁度矩陣（System Stiffness Matrix）</td>
+            </tr>
+            <tr>
+              <td>$U_u$</td>
+              <td>$\text{m}, \text{rad}$</td>
+              <td>未知自由度節點位移與轉角向量</td>
+            </tr>
+            <tr>
+              <td>$U_k$</td>
+              <td>$\text{m}, \text{rad}$</td>
+              <td>已知邊界條件之支承位移向量（固定端為 $0$）</td>
+            </tr>
+            <tr>
+              <td>$M_{uu}$</td>
+              <td>$\text{kg}$</td>
+              <td>對應未知自由度之結構質量矩陣</td>
+            </tr>
+            <tr>
+              <td>$E, I$</td>
+              <td>$\text{N/m}^2, \text{m}^4$</td>
+              <td>材料楊氏模數與斷面慣性矩</td>
+            </tr>
+            <tr>
+              <td>$\rho, A$</td>
+              <td>$\text{kg/m}^3, \text{m}^2$</td>
+              <td>材料質量密度與梁斷面積</td>
+            </tr>
+            <tr>
+              <td>$\omega_n, f_n$</td>
+              <td>$\text{rad/s}, \text{Hz}$</td>
+              <td>第 $n$ 模態自然圓頻率與自然頻率（$\omega_n = 2\pi f_n$）</td>
+            </tr>
+            <tr>
+              <td>$\zeta$</td>
+              <td>無因次</td>
+              <td>黏性等效阻尼比（Damping Ratio）</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 三、數值求解步驟 -->
+    <section class="note-section" id="section-algorithm">
+      <h2>三、數值求解步驟</h2>
+      <ol class="algorithm-list">
+        <li><strong>實驗前處理與 Tracker 座標校正：</strong>於懸臂梁頂端貼附高對比追蹤標記點，利用已知直尺長度建立空間比例尺（單位統一換算為 $\text{m}$），匯出時間 $t$ 與水平位移 $u(t)$ 序列。</li>
+        <li><strong>訊號去趨勢（Detrending）：</strong>扣除靜平衡位置之基準偏移量，確保自由振動訊號以零軸為中心對稱震盪。</li>
+        <li><strong>峰值偵測與阻尼比 $\zeta$ 識別：</strong>搜尋自由衰減波形之局部波峰幅值 $u(t_i)$，間隔 $m$ 個週期代入對數衰減公式求得平均阻尼比 $\zeta$。</li>
+        <li><strong>頻譜轉換識別自然頻率 $f_1$：</strong>對時域位移訊號執行快速傅立葉轉換（FFT），取單邊振幅譜主峰對應頻率作為第一模態實驗自然頻率 $f_{1,\text{exp}}$。</li>
+        <li><strong>理論特徵值驗證：</strong>組裝結構系統勁度矩陣 $K_S$ 並依 $U_k = 0$ 消去約束自由度，求解 $\det(K_{S,uu} - \omega_1^2 M_{uu}) = 0$，比對理論頻率與實驗量測誤差。</li>
+      </ol>
+    </section>
+
+    <!-- 四、MATLAB / Python 實作 -->
+    <section class="note-section" id="section-code">
+      <h2>四、MATLAB / Python 實作</h2>
+      <p>以下 Python 腳本展示如何從位移歷時計算阻尼比 $\zeta$、第一模態頻率 $f_1$，並組裝兩自由度簡化系統勁度矩陣 $K_S$ 進行理論特徵值檢核：</p>
+      <div class="code-wrapper">
+        <div class="code-header">
+          <span>cantilever_modal_analysis.py (Python 3)</span>
+          <button class="copy-btn" onclick="copyCodeBlock(this)">複製程式碼</button>
+        </div>
+        <pre><code class="language-python">import numpy as np
+from scipy.signal import find_peaks
+from scipy.linalg import eigh
+
+# 1. 模擬實驗參數與取樣設定 (SI 單位制: m, kg, s, Hz)
+fs = 240.0                      # 攝影機取樣頻率 (Hz)
+t = np.arange(0, 5.0, 1.0 / fs) # 總量測時間 5.0 s
+f_true = 4.25                   # 實際第一模態自然頻率 (Hz)
+zeta_true = 0.018               # 實際阻尼比
+omega_n = 2 * np.pi * f_true
+omega_d = omega_n * np.sqrt(1 - zeta_true**2)
+
+# 生成自由衰減位移訊號 u(t) (單位: m)
+u_t = 0.015 * np.exp(-zeta_true * omega_n * t) * np.cos(omega_d * t)
+u_t -= np.mean(u_t)             # 訊號去趨勢
+
+# 2. 對數衰減法識別阻尼比 zeta
+peaks, _ = find_peaks(u_t, distance=int(fs / (f_true * 1.5)))
+m = 5                           # 間隔 5 個週期計算
+delta = (1.0 / m) * np.log(u_t[peaks[0]] / u_t[peaks[m]])
+zeta_est = delta / np.sqrt((2 * np.pi)**2 + delta**2)
+
+# 3. FFT 頻譜分析識別自然頻率 f1
+N = len(u_t)
+freqs = np.fft.rfftfreq(N, d=1.0 / fs)
+fft_mag = np.abs(np.fft.rfft(u_t))
+f1_exp = freqs[np.argmax(fft_mag)]
+
+# 4. 理論模型驗證：組裝系統勁度矩陣 K_S (邊界條件 U_k = 0 已施加以保留未知自由度 U_u)
+E, I = 2.0e11, 8.33e-11         # 鋼尺彈性模數 (N/m^2) 與斷面慣性矩 (m^4)
+L = 0.45                        # 懸臂總長 (m)
+m_total = 0.14                  # 總質量 (kg)
+
+# 簡化等價單自由度/縮減系統勁度 K_S_uu 與質量 M_uu
+K_S_uu = np.array([[3.0 * E * I / (L**3)]])
+M_uu = np.array([[0.2427 * m_total]])  # Rayleigh 連續梁等效第一模態質量係數
+
+eigvals, _ = eigh(K_S_uu, M_uu)
+f1_theory = np.sqrt(eigvals[0]) / (2 * np.pi)
+
+print(f"識別阻尼比 zeta   : {zeta_est:.4f} (理論設定: {zeta_true:.4f})")
+print(f"實驗自然頻率 f1   : {f1_exp:.3f} Hz")
+print(f"理論自然頻率 f1   : {f1_theory:.3f} Hz")</code></pre>
+      </div>
+    </section>
+
+    <!-- 五、常見數值陷阱與除錯筆記 -->
+    <section class="note-section" id="section-pitfalls">
+      <h2>五、常見數值陷阱與除錯筆記</h2>
+      <div class="callout-warning">
+        <div class="callout-warning-title">⚠️ 實驗與數值分析常見誤差來源</div>
+        <ul>
+          <li><strong>夾持端微滑動違反 $U_k = 0$ 假設：</strong>實驗時若底部虎鉗未鎖緊，固定端會產生微小轉角（$U_k \neq 0$），導致實際系統勁度矩陣 $K_S$ 折減，使實驗測得之 $f_{1,\text{exp}}$ 明顯低於理論剛性固定端預測值。</li>
+          <li><strong>頻譜洩漏（Spectral Leakage）：</strong>若截取的時域訊號總長度並非振動週期的整數倍，直接執行 FFT 會導致主峰能量擴散、頻率解析度下降；建議補零（Zero-padding）至 $2^{14}$ 點以提升峰值讀取精度。</li>
+          <li><strong>初始撥動幅值過大引發幾何非線性：</strong>若初始頂端位移超過梁長 $10\%$（$u_0 > 0.1L$），大變形薄膜張力效應會使結構呈現硬化（Hardening），初期振動頻率偏高，此時線性勁度矩陣 $K_S$ 不再適用，應捨棄前 2 個週期再進行線性擬合。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 頁尾導覽 -->
+    <nav class="note-footer-nav">
+      <a href="../index.html" class="btn-back">← 返回筆記庫首頁</a>
+      <span class="note-id">StructLab // Note 01</span>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    StructLab Engineering Wiki &bull; 統一採用 SI 單位制與標準工程符號規範
+  </footer>
+
+  <script>
+    function copyCodeBlock(button) {
+      const codeElement = button.closest(".code-wrapper").querySelector("code");
+      const text = codeElement.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = button.textContent;
+        button.textContent = "已複製！";
+        setTimeout(() => {
+          button.textContent = originalText;
+        }, 1800);
+      });
+    }
+  </script>
+</body>
+</html>

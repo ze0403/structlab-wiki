@@ -1,0 +1,477 @@
+/* ==========================================================================
+   StructLab — Engineering Blueprint Theme (依據 AGENTS.md 第 3 節規範)
+   ========================================================================== */
+
+:root {
+  --bg-primary: #0f172a;
+  --bg-card: #1e293b;
+  --bg-code: #0b1120;
+  --border-color: #334155;
+  --accent-cyan: #38bdf8;
+  --accent-cyan-hover: #7dd3fc;
+  --accent-amber: #fbbf24;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", Consolas, Monaco, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  /* 工程藍圖微網格背景 */
+  background-image: 
+    linear-gradient(to right, rgba(56, 189, 248, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  line-height: 1.75;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-cyan-hover);
+}
+
+code, pre, .math-symbol {
+  font-family: var(--font-mono);
+}
+
+/* 頂部導覽列 */
+.site-header {
+  background-color: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1.25rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: 0.02em;
+}
+
+.brand-tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--bg-primary);
+  background-color: var(--accent-cyan);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.header-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   首頁樣式 (index.html)
+   ========================================================================== */
+.container {
+  max-width: 1040px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+  flex: 1;
+}
+
+.hero-section {
+  margin-bottom: 2.25rem;
+  padding-bottom: 1.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.hero-section h1 {
+  font-size: 2rem;
+  color: var(--text-main);
+  margin-bottom: 0.6rem;
+}
+
+.hero-section h1 span {
+  color: var(--accent-cyan);
+}
+
+.hero-section p {
+  color: var(--text-muted);
+  max-width: 720px;
+  font-size: 1rem;
+}
+
+/* 分類篩選按鈕列 */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1.75rem;
+}
+
+.filter-btn {
+  background-color: var(--bg-card);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-sans);
+}
+
+.filter-btn:hover {
+  border-color: var(--accent-cyan);
+  color: var(--text-main);
+}
+
+.filter-btn.active {
+  background-color: rgba(56, 189, 248, 0.15);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  font-weight: 600;
+}
+
+/* 筆記卡片網格 */
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 1.35rem;
+}
+
+.note-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.note-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent-cyan);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+  font-size: 0.8rem;
+}
+
+.badge {
+  background-color: rgba(56, 189, 248, 0.12);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.note-id {
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.note-card h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.65rem;
+  line-height: 1.45;
+}
+
+.note-card h2 a {
+  color: var(--text-main);
+}
+
+.note-card h2 a:hover {
+  color: var(--accent-cyan);
+}
+
+.note-card p {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  margin-bottom: 1.25rem;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.read-more {
+  font-weight: 600;
+  color: var(--accent-cyan);
+}
+
+/* ==========================================================================
+   單篇筆記頁面樣式 (notes/*.html - 依據 AGENTS.md 第 6 節)
+   ========================================================================== */
+.note-container {
+  max-width: 880px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  flex: 1;
+}
+
+.note-header {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent-cyan);
+  border-radius: 8px;
+  padding: 1.75rem;
+  margin-bottom: 2.25rem;
+}
+
+.note-header-top {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.note-date {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.note-header h1 {
+  font-size: 1.85rem;
+  color: var(--text-main);
+  margin-bottom: 0.75rem;
+  line-height: 1.35;
+}
+
+.note-summary {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+/* 內文章節區塊 */
+.note-section {
+  margin-bottom: 2.5rem;
+}
+
+.note-section h2 {
+  font-size: 1.35rem;
+  color: var(--accent-cyan);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.15rem;
+}
+
+.note-section p {
+  margin-bottom: 1rem;
+  color: var(--text-main);
+}
+
+/* KaTeX 公式區塊 */
+.equation-box {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin: 1.15rem 0;
+  overflow-x: auto;
+}
+
+/* 符號定義表 */
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--bg-card);
+  text-align: left;
+}
+
+th, td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+th {
+  background-color: rgba(15, 23, 42, 0.75);
+  color: var(--accent-cyan);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+/* 數值求解步驟清單 */
+.algorithm-list {
+  padding-left: 1.5rem;
+  color: var(--text-main);
+}
+
+.algorithm-list li {
+  margin-bottom: 0.85rem;
+  padding-left: 0.35rem;
+}
+
+.algorithm-list li strong {
+  color: var(--accent-cyan);
+}
+
+/* 程式碼區塊與複製按鈕 */
+.code-wrapper {
+  background-color: var(--bg-code);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.code-header {
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.copy-btn {
+  background-color: transparent;
+  color: var(--accent-cyan);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 4px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.78rem;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copy-btn:hover {
+  background-color: var(--accent-cyan);
+  color: var(--bg-primary);
+  font-weight: 600;
+}
+
+.code-wrapper pre[class*="language-"] {
+  margin: 0;
+  padding: 1.15rem;
+  background: transparent;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+/* 常見數值陷阱警示框 (.callout-warning) */
+.callout-warning {
+  background-color: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  border-left: 4px solid var(--accent-amber);
+  border-radius: 8px;
+  padding: 1.25rem 1.4rem;
+}
+
+.callout-warning-title {
+  color: var(--accent-amber);
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.callout-warning ul {
+  padding-left: 1.35rem;
+  color: var(--text-main);
+}
+
+.callout-warning li {
+  margin-bottom: 0.5rem;
+}
+
+/* 頁尾導覽列 */
+.note-footer-nav {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background-color: var(--bg-card);
+  color: var(--accent-cyan);
+  border: 1px solid var(--accent-cyan);
+  padding: 0.55rem 1.15rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+  background-color: var(--accent-cyan);
+  color: var(--bg-primary);
+}
+
+/* 全站頁尾 */
+.site-footer {
+  border-top: 1px solid var(--border-color);
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}

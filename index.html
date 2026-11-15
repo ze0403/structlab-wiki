@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StructLab｜結構力學與數值計算筆記庫</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="brand">
+        <span class="brand-tag">STRUCTLAB</span>
+        <span>結構力學與數值計算筆記庫</span>
+      </a>
+      <span class="header-subtitle">Structural Dynamics &amp; Numerical Methods</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero-section">
+      <h1>工程力學與數值方法<span>知識庫</span></h1>
+      <p>系統化整理結構動力學實驗、邊界元素與無網格法（BEM / BIQM）及工程數值計算演算法。所有推導統一採用 SI 國際單位制與標準矩陣符號規範。</p>
+    </section>
+
+    <div class="filter-bar" id="filter-bar" aria-label="筆記分類篩選">
+      <!-- 由 JavaScript 讀取 NOTES_DATA 自動生成分類按鈕 -->
+    </div>
+
+    <section class="notes-grid" id="notes-grid" aria-live="polite">
+      <!-- 由 JavaScript 讀取 NOTES_DATA 自動渲染筆記卡片 -->
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    StructLab Engineering Wiki &bull; Built with Static HTML/CSS/JS &amp; AGENTS.md Workflow
+  </footer>
+
+  <script src="assets/notes-registry.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const filterBar = document.getElementById("filter-bar");
+      const notesGrid = document.getElementById("notes-grid");
+      let currentCategory = "全部";
+
+      // 取得所有不重複分類
+      const categories = ["全部", ...new Set(NOTES_DATA.map(note => note.category))];
+
+      function renderFilters() {
+        filterBar.innerHTML = "";
+        categories.forEach(category => {
+          const btn = document.createElement("button");
+          btn.className = `filter-btn ${category === currentCategory ? "active" : ""}`;
+          btn.textContent = category;
+          btn.addEventListener("click", () => {
+            currentCategory = category;
+            renderFilters();
+            renderCards();
+          });
+          filterBar.appendChild(btn);
+        });
+      }
+
+      function renderCards() {
+        notesGrid.innerHTML = "";
+        const filtered = currentCategory === "全部"
+          ? NOTES_DATA
+          : NOTES_DATA.filter(note => note.category === currentCategory);
+
+        filtered.forEach(note => {
+          const card = document.createElement("article");
+          card.className = "note-card";
+          card.innerHTML = `
+            <div>
+              <div class="card-meta">
+                <span class="badge">${note.category}</span>
+                <span class="note-id">#${note.id}</span>
+              </div>
+              <h2><a href="${note.url}">${note.title}</a></h2>
+              <p>${note.summary}</p>
+            </div>
+            <div class="card-footer">
+              <span>更新日期：${note.date}</span>
+              <a href="${note.url}" class="read-more">閱讀筆記 →</a>
+            </div>
+          `;
+          notesGrid.appendChild(card);
+        });
+      }
+
+      renderFilters();
+      renderCards();
+    });
+  </script>
+</body>
+</html>
